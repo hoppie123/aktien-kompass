@@ -1,0 +1,2 @@
+# aktien-kompass
+Meine Aktienübersicht
