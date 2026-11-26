@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3eee4">
+<meta name="description" content="Private Aktien-Mindmap mit lokal gespeicherten Kursdaten und Portfolioübersicht.">
+<title>Aktien-Kompass</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#f3eee4;--ink:#403c35;--muted:#827c70;--panel:#fffdf8;--line:#d9d0c1;--shadow:0 12px 32px #55452b16;--green:#4b916d;--red:#c65c55;--neutral:#9b9488;--accent:#667d91}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+body{background-image:radial-gradient(circle at 50% 46%,#fff9 0,transparent 58%),radial-gradient(circle at 50% 50%,transparent 0 180px,#ded5c7 181px 182px,transparent 183px 330px,#e6ded2 331px 332px,transparent 333px)}
+button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:9px 13px;background:#fffdf8;color:var(--ink)}button:hover{background:#f8f2e8}button.primary{background:#566f62;color:white;border-color:#566f62}button.danger{color:#a63f3b}button:disabled{opacity:.5;cursor:not-allowed}
+header{height:auto;min-height:64px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ded5c7;background:#f8f4ecdf;backdrop-filter:blur(12px);position:sticky;top:0;z-index:5}
+.brand{font-weight:750;letter-spacing:.02em}.brand small{display:block;color:var(--muted);font-weight:450;font-size:11px;letter-spacing:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+main{max-width:1600px;margin:auto;padding:16px}
+.notice{max-width:1000px;margin:0 auto 12px;background:#fffaf0;border:1px solid #e7d8b8;border-radius:12px;padding:10px 13px;font-size:12px;color:#6d604b;line-height:1.45}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+.map-shell{height:min(78vh,900px);min-height:600px;position:relative;overflow:hidden;border:1px solid #e0d7c9;border-radius:22px;background:#f7f2e9cc;box-shadow:var(--shadow)}
+#map{width:100%;height:100%;display:block;touch-action:pan-y}
+.side{display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:14px;box-shadow:var(--shadow)}
+.panel h2{font-size:15px;margin:0 0 10px}.panel h3{font-size:13px;margin:13px 0 7px}.muted{color:var(--muted)}.small{font-size:11px;line-height:1.45}.field{display:grid;gap:5px;margin:8px 0}.field label{font-size:11px;color:var(--muted);font-weight:650}.field input,.field select{width:100%;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0}.row .grow{flex:1}.stack{display:grid;gap:7px}.pill{display:inline-flex;padding:4px 8px;border-radius:99px;background:#eee8dd;font-size:10px;color:#665f54}.status{font-size:11px;padding:8px 10px;background:#f5f0e7;border-radius:10px;line-height:1.4}.status.good{background:#edf5ee;color:#3e7254}.status.warn{background:#fbf1e4;color:#8a6130}.status.bad{background:#f9ecea;color:#a34843}
+.periods{display:flex;flex-wrap:wrap;gap:5px}.periods button{font-size:11px;padding:6px 9px}.periods button.active{background:#566f62;color:white;border-color:#566f62}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+#details{min-height:110px}.empty{color:var(--muted);font-size:12px;line-height:1.5}
+#chart{width:100%;height:120px;display:block}
+.listitem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid #eee8dd;font-size:12px}.listitem:first-child{border-top:0}.positive{color:var(--green)}.negative{color:var(--red)}
+dialog{border:1px solid var(--line);border-radius:18px;padding:0;width:min(560px,calc(100vw - 24px));max-height:88vh;box-shadow:0 24px 80px #30271840;background:var(--panel);color:var(--ink)}dialog::backdrop{background:#30271866;backdrop-filter:blur(3px)}.dlghead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.dlgbody{padding:16px 18px;overflow:auto;max-height:70vh}.dlgfoot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+textarea{width:100%;min-height:95px;border:1px solid var(--line);border-radius:10px;padding:10px;font:12px ui-monospace,monospace}
+footer{padding:18px;text-align:center;color:var(--muted);font-size:10px}
+@media(max-width:980px){.workspace{grid-template-columns:1fr}.map-shell{height:68vh;min-height:520px}.side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){header{align-items:flex-start}.actions button{font-size:11px;padding:8px}.workspace{display:flex;flex-direction:column}.map-shell{width:100%;height:62vh;min-height:470px}.side{display:flex;width:100%}main{padding:9px}.notice{font-size:11px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">◉ Aktien-Kompass<small>Private Aktien-Mindmap · lokal auf diesem Gerät</small></div>
+ <div class="actions">
+  <button id="addCatBtn">+ Kategorie</button>
+  <button id="importBtn">Kurse importieren</button>
+  <button id="settingsBtn">Optionen</button>
+ </div>
+</header>
+<main>
+ <div class="notice"><b>Transparenz:</b> Diese App enthält keine unerlaubten Kurs-Scraper und keine kostenpflichtige Datenverbindung. Es werden nur von dir importierte Kursdateien angezeigt. Jeder Kurs bleibt mit Handelsplatz, Quelle und Zeitstempel nachvollziehbar. Ohne importierte Daten werden keine Beispielkurse erfunden.</div>
+ <div class="workspace">
+  <section class="map-shell"><svg id="map" role="img" aria-label="Interaktive Aktien-Mindmap"></svg></section>
+  <aside class="side">
+   <section class="panel">
+    <h2>Zeitraum</h2>
+    <div class="periods" id="periods">
+     <button data-period="1D" class="active">1 Tag</button><button data-period="1W">1 Woche</button><button data-period="1M">1 Monat</button><button data-period="1Y">1 Jahr</button><button data-period="5Y">5 Jahre</button><button data-period="ALL">Gesamt</button>
+    </div>
+    <div class="field"><label for="startDate">Eigener Starttag (optional)</label><input id="startDate" type="date"></div>
+    <div class="field"><label for="venueFilter">Handelsplatz</label><select id="venueFilter"><option value="ALL">Alle verfügbaren Quellen</option><option>Tradegate</option><option>gettex</option><option>Stuttgart</option><option>Lang & Schwarz Exchange</option><option>Baader Trading</option><option>Sonstige / Import</option></select></div>
+    <div class="status warn" id="dataStatus">Noch keine Kursdaten importiert.</div>
+   </section>
+   <section class="panel" id="details">
+    <h2>Auswahl</h2><div class="empty">Wähle eine Kategorie oder Aktie in der Mindmap aus. Mit Doppelklick auf Aktien kannst du sie für den Vergleich markieren.</div>
+   </section>
+   <section class="panel">
+    <h2>Vergleich</h2><div id="compareList" class="empty">Noch keine Aktien ausgewählt.</div>
+    <button id="clearCompare" style="margin-top:8px">Vergleich zurücksetzen</button>
+   </section>
+   <section class="panel">
+    <h2>Privates Depot</h2>
+    <div class="small muted">Optional und standardmäßig ausgeschaltet. Einträge bleiben ausschließlich lokal auf diesem Gerät.</div>
+    <div class="row" style="margin-top:9px"><label class="small"><input type="checkbox" id="portfolioToggle"> Depotübersicht anzeigen</label></div>
+    <div id="portfolioArea" hidden><div id="portfolioSummary" class="small muted" style="margin:8px 0">Noch keine Käufe erfasst.</div><button id="addBuyBtn">Kauf eintragen</button></div>
+   </section>
+   <section class="panel">
+    <h2>Datenschutz & Sicherung</h2>
+    <div class="small muted">Alle Aktien, Kursimporte und Einstellungen werden lokal im Browser gespeichert. Wer Zugriff auf dein Gerät oder Browserprofil hat, kann diese Daten möglicherweise ebenfalls sehen.</div>
+    <div class="stack" style="margin-top:9px"><button id="exportBtn">Lokale Daten sichern (JSON)</button><button id="backupImportBtn">Sicherung wiederherstellen</button><button id="resetBtn" class="danger">Alle lokalen Daten löschen</button></div>
+   </section>
+  </aside>
+ </div>
+</main>
+<footer>Keine Anlageberatung. Kurse können unvollständig, verzögert oder fehlerhaft sein. Vor Anlageentscheidungen immer mit einer verlässlichen Quelle abgleichen.</footer>
+
+<dialog id="dlg"><div class="dlghead"><b id="dlgTitle">Optionen</b><button id="closeDlg" aria-label="Schließen">✕</button></div><div class="dlgbody" id="dlgBody"></div><div class="dlgfoot"><button id="cancelDlg">Schließen</button><button class="primary" id="saveDlg">Übernehmen</button></div></dialog>
+<input type="file" id="fileInput" accept=".csv,.txt,.json,.gz,application/gzip,text/csv,application/json" hidden>
+<input type="file" id="backupInput" accept=".json,application/json" hidden>
+<script>
+(()=>{'use strict';
+const $=s=>document.querySelector(s), svgNS='http://www.w3.org/2000/svg';
+const COLORS=['#8caa9b','#9dabc0','#c7a77e','#b59bb4','#8eaaa9','#c59b8c','#a5ad83','#b2a18c'];
+const VENUES=['Tradegate','gettex','Stuttgart','Lang & Schwarz Exchange','Baader Trading','Sonstige / Import'];
+const STORE='aktienkompass_v1';
+const emptyState=()=>({version:1,categories:[{id:'cat-tech',name:'Technologie',color:COLORS[0],stocks:[]},{id:'cat-etf',name:'ETFs',color:COLORS[1],stocks:[]},{id:'cat-other',name:'Weitere Aktien',color:COLORS[2],stocks:[]}],prices:[],settings:{period:'1D',startDate:'',venue:'ALL',weighting:'equal',portfolio:false},buys:[]});
+let state=load(),selected=null,compare=new Set(),expanded=null;
+function load(){try{const x=JSON.parse(localStorage.getItem(STORE));if(x&&x.version===1&&Array.isArray(x.categories)&&Array.isArray(x.prices))return x}catch(e){}return emptyState()}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(state));return true}catch(e){alert('Speichern fehlgeschlagen. Eventuell ist der lokale Speicher voll. Bitte exportiere eine Sicherung und entferne alte Kursdaten.');return false}}
+function uid(){return 'i'+Math.random().toString(36).slice(2,10)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmt(n,currency='EUR'){try{return Number.isFinite(n)?new Intl.NumberFormat('de-DE',{style:'currency',currency:/^[A-Z]{3}$/.test(currency)?currency:'EUR',maximumFractionDigits:4}).format(n):'–'}catch(e){return Number.isFinite(n)?n.toLocaleString('de-DE')+' '+currency:'–'}}
+function pct(n){return Number.isFinite(n)?(n>=0?'+':'')+n.toFixed(2).replace('.',',')+' %':'–'}
+function allStocks(){return state.categories.flatMap(c=>c.stocks.map(s=>({...s,category:c})))}
+function getStock(id){return allStocks().find(s=>s.id===id)}
+function dateForPeriod(){if(state.settings.startDate)return new Date(state.settings.startDate+'T00:00:00');let d=new Date();const p=state.settings.period; if(p==='1D')d.setDate(d.getDate()-1);if(p==='1W')d.setDate(d.getDate()-7);if(p==='1M')d.setMonth(d.getMonth()-1);if(p==='1Y')d.setFullYear(d.getFullYear()-1);if(p==='5Y')d.setFullYear(d.getFullYear()-5);if(p==='ALL')d=new Date(0);return d}
+function pricesFor(stock,venue=state.settings.venue){return state.prices.filter(p=>p.symbolKey===stock.symbolKey&&(!p.stockId||p.stockId===stock.id)&&(venue==='ALL'||p.venue===venue)).sort((a,b)=>a.time-b.time)}
+function calc(stock){const ps=pricesFor(stock);if(!ps.length)return {last:null,base:null,change:null,points:[]};const last=ps[ps.length-1],start=dateForPeriod().getTime();let base=ps.find(p=>p.time>=start)||ps[0];if(state.settings.startDate){const before=ps.filter(p=>p.time<=start);if(before.length)base=before[before.length-1]}return {last,base,change:base.price?((last.price/base.price)-1)*100:null,points:ps.filter(p=>p.time>=Math.min(start,ps[0].time))}}
+function catStats(cat){let vals=cat.stocks.map(s=>({s,d:calc(s)})).filter(x=>x.d.change!==null);if(!vals.length)return null;if(state.settings.weighting==='capital'){const weights=vals.map(x=>state.buys.filter(b=>b.stockId===x.s.id).reduce((a,b)=>a+b.quantity*b.price,0));const total=weights.reduce((a,b)=>a+b,0);if(total>0)return vals.reduce((a,x,i)=>a+x.d.change*weights[i],0)/total}return vals.reduce((a,x)=>a+x.d.change,0)/vals.length}
+function make(tag,attrs={},parent){const e=document.createElementNS(svgNS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(parent)parent.appendChild(e);return e}
+function text(parent,x,y,str,attrs={}){const t=make('text',{x,y,...attrs},parent);t.textContent=str;return t}
+function render(){
+ const svg=$('#map'),box=svg.getBoundingClientRect(),w=Math.max(320,box.width),h=Math.max(420,box.height);svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.replaceChildren();
+ const cx=w/2,cy=h/2,scale=Math.min(1,w/1050,h/780),centerR=43*scale;
+ const defs=make('defs',{},svg);const filter=make('filter',{id:'shadow',x:'-50%',y:'-50%',width:'200%',height:'200%'},defs);make('feDropShadow',{dx:0,dy:5,stdDeviation:5,'flood-color':'#584b39','flood-opacity':'.14'},filter);
+ const lineLayer=make('g',{},svg),nodeLayer=make('g',{},svg);
+ const cats=state.categories,n=cats.length;
+ cats.forEach((cat,i)=>{
+  const angle=(-Math.PI/2)+(i*Math.PI*2/Math.max(n,1));const stocks=cat.stocks;
+  const stockR=Math.max(125*scale,stocks.length*74*scale/(2*Math.PI));const catDist=(Math.min(w,h)*.34)+Math.max(0,stockR-125*scale)*.85;
+  const x=cx+Math.cos(angle)*catDist,y=cy+Math.sin(angle)*catDist;
+  const catR=(49+Math.min(18,stocks.length*2))*scale;
+  make('line',{x1:cx,y1:cy,x2:x,y2:y,stroke:cat.color,'stroke-width':2.4,'stroke-linecap':'round',opacity:.8},lineLayer);
+  const g=make('g',{class:'node',tabindex:0,role:'button','aria-label':cat.name},nodeLayer);
+  make('circle',{cx:x,cy:y,r:catR+4,fill:'none',stroke:'#766d60','stroke-width':1.4,opacity:.45},g);
+  make('circle',{cx:x,cy:y,r:catR,fill:cat.color,opacity:.83,filter:'url(#shadow)'},g);
+  const st=catStats(cat);if(st!==null)make('circle',{cx:x,cy:y,r:catR+7,fill:'none',stroke:st>=0?'#4b916d':'#c65c55','stroke-width':Math.min(7,2+Math.abs(st)/5),opacity:.9},g);
+  text(g,x,y-3,cat.name.slice(0,19),{'text-anchor':'middle','font-size':Math.max(10,13*scale),'font-weight':700,fill:'#fff'});
+  text(g,x,y+14,st===null?'Keine Daten':pct(st),{'text-anchor':'middle','font-size':Math.max(9,10*scale),fill:'#fff'});
+  g.addEventListener('click',()=>selectCategory(cat.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectCategory(cat.id)}});
+  stocks.forEach((s,j)=>{
+   const a=angle+(j-(stocks.length-1)/2)*Math.min(.5,Math.PI*2/Math.max(stocks.length,5));
+   const sx=x+Math.cos(a)*stockR,sy=y+Math.sin(a)*stockR;
+   make('line',{x1:x,y1:y,x2:sx,y2:sy,stroke:cat.color,'stroke-width':1.8,opacity:.85},lineLayer);
+   const sg=make('g',{class:'node',tabindex:0,role:'button'},nodeLayer),sw=126*scale,sh=48*scale;
+   const val=calc(s),loss=allStocks().map(z=>({id:z.id,v:calc(z).change})).filter(z=>z.v!==null).sort((a,b)=>a.v-b.v)[0];
+   const isWorst=loss&&loss.id===s.id&&loss.v<0;
+   make('rect',{x:sx-sw/2,y:sy-sh/2,width:sw,height:sh,rx:13*scale,fill:'#fffdf8',stroke:isWorst?'#bd514a':cat.color,'stroke-width':isWorst?4:2,filter:'url(#shadow)'},sg);
+   text(sg,sx,sy-4,(s.name||s.symbolKey).slice(0,20),{'text-anchor':'middle','font-size':Math.max(9,11*scale),'font-weight':700,fill:'#403c35'});
+   text(sg,sx,sy+12,val.last?fmt(val.last.price):'Keine Kursdaten',{'text-anchor':'middle','font-size':Math.max(8,9*scale),fill:'#756d62'});
+   sg.addEventListener('click',()=>selectStock(s.id));sg.addEventListener('dblclick',()=>toggleCompare(s.id));
+   sg.addEventListener('pointerenter',()=>{if(window.matchMedia('(hover:hover)').matches)showStockHover(s.id,sg,sx,sy,sw,sh,scale)});
+   sg.addEventListener('pointerleave',()=>{if(window.matchMedia('(hover:hover)').matches&&expanded===s.id){expanded=null;render()}});
+  });
+ });
+ const center=make('g',{class:'node',tabindex:0,role:'button'},nodeLayer);
+ make('circle',{cx,cy,r:centerR+5,fill:'none',stroke:'#71695e','stroke-width':1.5,opacity:.55},center);
+ make('circle',{cx,cy,r:centerR,fill:'#d7c8ad',stroke:'#a99678','stroke-width':2,filter:'url(#shadow)'},center);
+ text(center,cx,cy+4,'Optionen',{'text-anchor':'middle','font-size':12*scale,'font-weight':750,fill:'#554a3b'});
+ center.addEventListener('click',openSettings);
+}
+function showStockHover(id,g,x,y,sw,sh,scale){expanded=id;const s=getStock(id);if(!s)return;const d=calc(s);const r=make('rect',{x:x-sw/2-5,y:y-sh/2-5,width:sw+10,height:sh+10,rx:14,fill:'#fffdf8',stroke:s.category.color,'stroke-width':2,filter:'url(#shadow)'},g);r.setAttribute('opacity','.97');text(g,x,y+1,d.last?fmt(d.last.price):'Keine Daten',{'text-anchor':'middle','font-size':10,'font-weight':700,fill:'#403c35'});text(g,x,y+15,d.change!==null?pct(d.change):'Importiere Kursdaten',{'text-anchor':'middle','font-size':9,fill:d.change>=0?'#4b916d':'#c65c55'});}
+function selectCategory(id){selected={type:'category',id};const c=state.categories.find(x=>x.id===id);if(!c)return;$('#details').innerHTML=`<h2>${esc(c.name)}</h2><div class="row"><span class="pill">${c.stocks.length} Aktien</span><span class="pill">${pct(catStats(c))}</span></div><div class="field"><label>Kategoriefarbe</label><input id="catColor" type="color" value="${c.color}"></div><div class="row"><button id="catAdd" class="primary">+ Aktie hinzufügen</button><button id="catRename">Umbenennen</button><button id="catDelete" class="danger">Löschen</button></div><div class="small muted" style="margin-top:9px">Die Kategorieentwicklung ist der gleichgewichtete Durchschnitt der verfügbaren Einzelaktien. Aktien ohne Kursdaten werden nicht eingerechnet.</div><canvas id="chart"></canvas>`;$('#catColor').addEventListener('input',e=>{c.color=e.target.value;save();render()});$('#catAdd').onclick=()=>addStock(c.id);$('#catRename').onclick=()=>{const v=prompt('Neuer Kategoriename',c.name);if(v?.trim()){c.name=v.trim();save();render();selectCategory(id)}};$('#catDelete').onclick=()=>{if(confirm(`Kategorie „${c.name}“ samt Aktien löschen?`)){state.categories=state.categories.filter(x=>x.id!==id);save();selected=null;render();showEmpty()}};drawCategoryChart(c)}
+function selectStock(id){selected={type:'stock',id};const s=getStock(id);if(!s)return;const d=calc(s),ps=pricesFor(s);$('#details').innerHTML=`<h2>${esc(s.name)}</h2><div class="small muted">${esc(s.symbolKey)} · ${esc(s.category.name)}</div><div style="font-size:23px;font-weight:750;margin:8px 0">${d.last?fmt(d.last.price,d.last.currency):'Keine Kursdaten'}</div><div class="${d.change>=0?'positive':'negative'}" style="font-weight:700">${d.change===null?'Veränderung nicht berechenbar':pct(d.change)}</div><div class="small muted" style="margin-top:6px">${d.last?'Quelle: '+esc(d.last.venue)+' · Stand: '+new Date(d.last.time).toLocaleString('de-DE'):'Bitte Kursdatei importieren.'}</div><canvas id="chart"></canvas><div class="row"><button id="editStock">Bearbeiten</button><button id="removeStock" class="danger">Entfernen</button></div><div class="small muted" style="margin-top:7px">${ps.length} lokale Kursdatensätze</div>`;drawStockChart(s);$('#editStock').onclick=()=>editStock(s);$('#removeStock').onclick=()=>{if(confirm(`${s.name} entfernen?`)){s.category.stocks=s.category.stocks.filter(x=>x.id!==id);state.prices=state.prices.filter(p=>p.stockId!==id&&p.symbolKey!==s.symbolKey);state.buys=state.buys.filter(b=>b.stockId!==id);save();selected=null;render();showEmpty()}}}
+function showEmpty(){$('#details').innerHTML='<h2>Auswahl</h2><div class="empty">Wähle eine Kategorie oder Aktie in der Mindmap aus. Mit Doppelklick auf Aktien kannst du sie für den Vergleich markieren.</div>'}
+function drawStockChart(s){const c=$('#chart');if(!c)return;const ps=pricesFor(s);drawLine(c,ps.map(p=>p.price))}
+function drawCategoryChart(cat){const c=$('#chart');if(!c)return;const stocks=cat.stocks.map(s=>calc(s)).filter(x=>x.points.length);if(!stocks.length){drawLine(c,[]);return}let n=Math.max(...stocks.map(x=>x.points.length));let vals=Array.from({length:n},(_,i)=>{let v=stocks.map(x=>x.points[Math.min(i,x.points.length-1)]?.price).filter(Number.isFinite);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null});drawLine(c,vals)}
+function drawLine(canvas,vals){if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.clientWidth||260,h=120,dpr=devicePixelRatio||1;canvas.width=w*dpr;canvas.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);const a=vals.filter(Number.isFinite);if(a.length<2){ctx.fillStyle='#8b8377';ctx.font='11px system-ui';ctx.fillText('Noch nicht genügend historische Kursdaten',8,60);return}const min=Math.min(...a),max=Math.max(...a),pad=10;ctx.strokeStyle='#ddd3c4';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,h-pad);ctx.lineTo(w-pad,h-pad);ctx.stroke();ctx.strokeStyle=a[a.length-1]>=a[0]?'#4b916d':'#c65c55';ctx.lineWidth=2;ctx.beginPath();a.forEach((v,i)=>{const x=pad+i/(a.length-1)*(w-2*pad),y=h-pad-(v-min)/(max-min||1)*(h-2*pad);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
+function toggleCompare(id){compare.has(id)?compare.delete(id):compare.add(id);renderCompare();if(selected?.type==='stock')selectStock(selected.id)}
+function renderCompare(){const el=$('#compareList');if(!compare.size){el.textContent='Noch keine Aktien ausgewählt.';el.className='empty';return}el.className='';el.innerHTML=[...compare].map(id=>{const s=getStock(id);if(!s)return'';const d=calc(s);return `<div class="listitem"><span>${esc(s.name)}</span><b class="${d.change>=0?'positive':'negative'}">${pct(d.change)}</b></div>`}).join('')}
+function addCategory(){const name=prompt('Name der neuen Kategorie');if(!name?.trim())return;state.categories.push({id:uid(),name:name.trim(),color:COLORS[state.categories.length%COLORS.length],stocks:[]});save();render()}
+function addStock(catId){const name=prompt('Aktienname (Anzeigename)');if(!name?.trim())return;const key=prompt('WKN oder ISIN (eindeutige Kennung)');if(!key?.trim())return;const cat=state.categories.find(c=>c.id===catId);if(!cat)return;if(allStocks().some(s=>s.symbolKey.toUpperCase()===key.trim().toUpperCase())){alert('Diese WKN/ISIN ist bereits in der Mindmap vorhanden.');return}cat.stocks.push({id:uid(),name:name.trim(),symbolKey:key.trim().toUpperCase(),logo:''});save();render();selectStock(cat.stocks.at(-1).id)}
+function editStock(s){const name=prompt('Anzeigename',s.name);if(name?.trim())s.name=name.trim();const key=prompt('WKN oder ISIN',s.symbolKey);if(key?.trim())s.symbolKey=key.trim().toUpperCase();save();render();selectStock(s.id)}
+function openSettings(){openDialog('Optionen',`<h3>Anzeige und Berechnung</h3><div class="field"><label>Gewichtung der Kategorie</label><select id="weighting"><option value="equal">Alle Aktien gleich gewichten</option><option value="capital">Nach investiertem Kapital gewichten (Depot)</option></select></div><div class="field"><label>Startdatum</label><input id="setDate" type="date" value="${state.settings.startDate}"></div><h3>Kategorie anlegen</h3><div class="field"><label>Name</label><input id="newCatName" placeholder="z. B. Gesundheit"></div><div class="small muted">Kursdaten werden nicht automatisch aus Webseiten ausgelesen. Bitte nur Daten importieren, deren Nutzungsbedingungen die private lokale Verwendung erlauben.</div>`);$('#weighting').value=state.settings.weighting;$('#saveDlg').onclick=()=>{state.settings.weighting=$('#weighting').value;state.settings.startDate=$('#setDate').value;const n=$('#newCatName').value.trim();if(n)state.categories.push({id:uid(),name:n,color:COLORS[state.categories.length%COLORS.length],stocks:[]});save();closeDialog();syncControls();render()}}
+function openDialog(title,body){$('#dlgTitle').textContent=title;$('#dlgBody').innerHTML=body;$('#dlg').showModal();$('#saveDlg').onclick=closeDialog}
+function closeDialog(){$('#dlg').close()}
+function importHelp(){openDialog('Kursdaten importieren',`<div class="status warn">Die App lädt keine Kurse heimlich von Google Finance oder anderen Webseiten. Importiere nur Dateien, die du rechtmäßig für deine private Nutzung verwenden darfst. Die App sendet keine importierten Daten an einen Server.</div><h3>CSV-Format</h3><p class="small">Eine Zeile pro Kurs. Erforderliche Spalten: <b>symbol,date,price,venue</b>. Optional: <b>currency,source,timestamp</b>. Trennzeichen Komma oder Semikolon. Dezimalpunkt oder deutsches Dezimalkomma wird unterstützt.</p><textarea readonly>symbol,date,price,venue,currency,source\nAAPL,2026-11-25T16:00:00,245.12,Sonstige / Import,USD,Mein Datenexport\nDE0007164600,2026-11-25T17:30:00,198.40,Tradegate,EUR,Offizieller Datenexport</textarea><p class="small">symbol muss der WKN/ISIN-Kennung entsprechen, die du beim Anlegen der Aktie eingetragen hast. Datum bitte als ISO-Datum oder ISO-Zeit angeben. Unterstützt werden CSV und JSON. GZIP-Dateien können nach lokalem Entpacken als CSV importiert werden.</p><div class="row"><button id="chooseImport" class="primary">Datei auswählen</button><button id="manualPrice">Einzelkurs eintragen</button></div>`);$('#saveDlg').textContent='Fertig';$('#saveDlg').onclick=closeDialog;$('#chooseImport').onclick=()=>{$('#fileInput').click();closeDialog()};$('#manualPrice').onclick=()=>{closeDialog();manualPrice()}}
+function parseNum(s){let v=String(s).trim().replace(/\s/g,'');if(v.includes(',')&&v.includes('.'))v=v.lastIndexOf(',')>v.lastIndexOf('.')?v.replace(/\./g,'').replace(',','.'):v.replace(/,/g,'');else v=v.replace(',','.');const n=Number(v);return Number.isFinite(n)?n:NaN}
+function parseDate(s){const d=new Date(s);return Number.isFinite(d.getTime())?d.getTime():NaN}
+function normalizeVenue(v){const x=String(v||'Sonstige / Import').trim().toLowerCase();return VENUES.find(y=>y.toLowerCase()===x)||'Sonstige / Import'}
+function ingest(rows){let added=0,skipped=0;for(const r of rows){const symbol=String(r.symbol||r.isin||r.wkn||r.symbolKey||'').trim().toUpperCase(),price=parseNum(r.price??r.last??r.close),time=parseDate(r.date||r.datetime||r.timestamp||r.time);if(!symbol||!Number.isFinite(price)||price<=0||!Number.isFinite(time)){skipped++;continue}const s=allStocks().find(x=>x.symbolKey.toUpperCase()===symbol);if(!s){skipped++;continue}const venue=normalizeVenue(r.venue||r.exchange);const record={id:uid(),stockId:s.id,symbolKey:s.symbolKey,price,time,venue,currency:String(r.currency||'EUR').toUpperCase(),source:String(r.source||'Lokaler CSV-Import')};const dupe=state.prices.some(p=>p.stockId===s.id&&p.time===time&&p.venue===venue);if(dupe){skipped++;continue}state.prices.push(record);added++}state.prices.sort((a,b)=>a.time-b.time);save();return {added,skipped}}
+async function readFile(file){try{let text=await file.text();if(file.name.toLowerCase().endsWith('.gz'))throw new Error('GZIP-Dateien bitte vor dem Import lokal entpacken und die CSV auswählen.');let rows;if(file.name.toLowerCase().endsWith('.json')){const j=JSON.parse(text);rows=Array.isArray(j)?j:(j.data||j.prices||[])}else rows=parseCSV(text);const r=ingest(rows);alert(`${r.added} Kursdatensätze importiert. ${r.skipped} Zeilen übersprungen (unbekannte Kennung, ungültiger Kurs/Zeitpunkt oder Duplikat).`);refresh()}catch(e){alert('Import nicht möglich: '+e.message)}}
+function parseCSV(txt){const lines=txt.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(!lines.length)return[];const sep=(lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length?';':',';const split=line=>{let out=[],cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&line[i+1]==='"'&&q){cur+='"';i++}else if(c==='"')q=!q;else if(c===sep&&!q){out.push(cur);cur=''}else cur+=c}out.push(cur);return out};const heads=split(lines.shift()).map(x=>x.trim().toLowerCase());return lines.map(line=>{const a=split(line),o={};heads.forEach((h,i)=>o[h]=a[i]??'');return o})}
+function manualPrice(){const stock=allStocks();if(!stock.length){alert('Lege zuerst eine Kategorie und Aktie an.');return}const opts=stock.map((s,i)=>`${i+1}. ${s.name} (${s.symbolKey})`).join('\n');const choice=Number(prompt('Aktie auswählen:\n'+opts));if(!Number.isInteger(choice)||choice<1||choice>stock.length)return;const s=stock[choice-1],price=parseNum(prompt('Kurs (Zahl)'));if(!Number.isFinite(price)||price<=0)return;const venue=normalizeVenue(prompt('Handelsplatz (z. B. Tradegate, gettex, Stuttgart)')||'Sonstige / Import');const time=parseDate(prompt('Zeitpunkt (ISO, z. B. 2026-11-25T17:30:00)',new Date().toISOString().slice(0,16)));if(!Number.isFinite(time))return;state.prices.push({id:uid(),stockId:s.id,symbolKey:s.symbolKey,price,time,venue,currency:'EUR',source:'Manueller Eintrag'});save();refresh()}
+function syncControls(){$('#periods').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.period===state.settings.period));$('#startDate').value=state.settings.startDate;$('#venueFilter').value=state.settings.venue;$('#portfolioToggle').checked=!!state.settings.portfolio;$('#portfolioArea').hidden=!state.settings.portfolio;updateStatus()}
+function updateStatus(){const n=state.prices.length,latest=state.prices.reduce((a,p)=>Math.max(a,p.time),0);$('#dataStatus').textContent=n?`${n} lokale Kursdatensätze · letzter Import/Stand: ${new Date(latest).toLocaleString('de-DE')}. Datenquelle und Verzögerung bitte anhand des Imports prüfen.`:'Noch keine Kursdaten importiert. Die Mindmap funktioniert, zeigt aber bewusst keine erfundenen Kurse.';$('#dataStatus').className='status '+(n?'good':'warn')}
+function refresh(){syncControls();render();renderCompare();if(selected?.type==='stock'&&getStock(selected.id))selectStock(selected.id);else if(selected?.type==='category'){const c=state.categories.find(c=>c.id===selected.id);if(c)selectCategory(c.id)}}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});download(blob,'aktien-kompass-sicherung.json')}
+function download(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500)}
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(x.version!==1||!Array.isArray(x.categories)||!Array.isArray(x.prices))throw Error('Ungültiges Sicherungsformat');if(confirm('Aktuelle lokale Daten durch die Sicherung ersetzen?')){state=x;save();selected=null;compare.clear();refresh();showEmpty()}}catch(e){alert('Sicherung konnte nicht geladen werden: '+e.message)}};r.readAsText(file)}
+function portfolio(){const buys=state.buys;let invested=buys.reduce((a,b)=>a+b.quantity*b.price,0),value=0;buys.forEach(b=>{const s=getStock(b.stockId),d=s&&calc(s);if(d?.last)value+=b.quantity*d.last.price});$('#portfolioSummary').textContent=buys.length?`Investiert: ${fmt(invested)} · Aktueller Wert (nur mit Kursdaten): ${fmt(value)} · Nicht realisiert: ${fmt(value-invested)}`:'Noch keine Käufe erfasst.'}
+function addBuy(){const ss=allStocks();if(!ss.length){alert('Lege zuerst eine Aktie an.');return}const n=Number(prompt('Nummer der Aktie:\n'+ss.map((s,i)=>`${i+1}. ${s.name}`).join('\n')));if(!Number.isInteger(n)||n<1||n>ss.length)return;const quantity=parseNum(prompt('Stückzahl'));const price=parseNum(prompt('Kaufkurs je Stück'));const date=prompt('Kaufdatum (YYYY-MM-DD)',new Date().toISOString().slice(0,10));if(!(quantity>0&&price>0&&parseDate(date)!==NaN))return;state.buys.push({id:uid(),stockId:ss[n-1].id,quantity,price,date});save();portfolio()}
+function reset(){if(!confirm('Wirklich alle Kategorien, Kursdaten, Depotdaten und Einstellungen auf diesem Gerät löschen?'))return;localStorage.removeItem(STORE);state=emptyState();selected=null;compare.clear();refresh();showEmpty()}
+$('#addCatBtn').onclick=addCategory;$('#settingsBtn').onclick=openSettings;$('#importBtn').onclick=importHelp;$('#periods').onclick=e=>{const b=e.target.closest('button[data-period]');if(!b)return;state.settings.period=b.dataset.period;state.settings.startDate='';save();refresh()};$('#startDate').onchange=e=>{state.settings.startDate=e.target.value;save();refresh()};$('#venueFilter').onchange=e=>{state.settings.venue=e.target.value;save();refresh()};$('#clearCompare').onclick=()=>{compare.clear();renderCompare();render()};$('#exportBtn').onclick=exportData;$('#backupImportBtn').onclick=()=>$('#backupInput').click();$('#resetBtn').onclick=reset;$('#fileInput').onchange=e=>{if(e.target.files[0])readFile(e.target.files[0]);e.target.value=''};$('#backupInput').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};$('#closeDlg').onclick=closeDialog;$('#cancelDlg').onclick=closeDialog;$('#portfolioToggle').onchange=e=>{state.settings.portfolio=e.target.checked;save();syncControls();portfolio()};$('#addBuyBtn').onclick=addBuy;$('#saveDlg').onclick=closeDialog;
+window.addEventListener('resize',()=>render());if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+syncControls();render();renderCompare();portfolio();
+})();
+</script>
+</body></html>

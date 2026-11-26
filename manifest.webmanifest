@@ -1,0 +1,18 @@
+{
+  "name": "Aktien-Kompass – private Aktien-Mindmap",
+  "short_name": "Aktien-Kompass",
+  "description": "Private Aktien-Mindmap mit lokal gespeicherten Kursdaten.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3eee4",
+  "theme_color": "#f3eee4",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
